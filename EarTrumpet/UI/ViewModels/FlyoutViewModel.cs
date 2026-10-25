@@ -1,6 +1,7 @@
-﻿using EarTrumpet.UI.Helpers;
-using EarTrumpet.Interop.Helpers;
+﻿using EarTrumpet.Interop.Helpers;
+using EarTrumpet.UI.Helpers;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Diagnostics;
@@ -23,11 +24,20 @@ namespace EarTrumpet.UI.ViewModels
         public string DeviceNameText => Devices.Count > 0 ? Devices[0].DisplayName : null;
         public FlyoutViewState State { get; private set; }
         public ObservableCollection<DeviceViewModel> Devices { get; private set; }
+        public ObservableCollection<SoundOutputDeviceViewModel> PlaybackDevices { get; private set; }
+        public ObservableCollection<IAppItemViewModel> MixerApps { get; private set; }
+        public DeviceViewModel DefaultDevice => _mainViewModel.Default;
+        public string DefaultDeviceGlyph => SoundOutputDeviceViewModel.GlyphFor(_mainViewModel.Default);
         public ICommand ExpandCollapse { get; private set; }
+        public ICommand CloseFlyout { get; private set; }
+        public ICommand OpenSoundSettings { get; private set; }
+        public ICommand OpenVolumeMixerSettings { get; private set; }
         public InputType LastInput { get; private set; }
         public ICommand DisplaySettingsChanged { get; }
 
         private readonly DeviceCollectionViewModel _mainViewModel;
+        private DeviceViewModel _glyphDevice;
+        private readonly List<DeviceViewModel> _hookedDevices = new List<DeviceViewModel>();
         private readonly DispatcherTimer _deBounceTimer;
         private readonly Dispatcher _currentDispatcher = Dispatcher.CurrentDispatcher;
         private readonly Action _returnFocusToTray;
@@ -42,8 +52,14 @@ namespace EarTrumpet.UI.ViewModels
             IsExpanded = _settings.IsExpanded;
             Dialog = new ModalDialogViewModel();
             Devices = new ObservableCollection<DeviceViewModel>();
+            PlaybackDevices = new ObservableCollection<SoundOutputDeviceViewModel>();
+            MixerApps = new ObservableCollection<IAppItemViewModel>();
             _returnFocusToTray = returnFocusToTray;
             _mainViewModel = mainViewModel;
+            CloseFlyout = new RelayCommand(() => BeginClose(InputType.Command));
+            OpenSoundSettings = new RelayCommand(() => SettingsPageHelper.Open("sound"));
+            OpenVolumeMixerSettings = new RelayCommand(() => SettingsPageHelper.Open("apps-volume"));
+            TaskbarWindowMonitor.Current.Changed += (_, __) => RefreshMixerApps();
             _mainViewModel.DefaultChanged += OnDefaultPlaybackDeviceChanged;
             _mainViewModel.AllDevices.CollectionChanged += AllDevices_CollectionChanged;
             AllDevices_CollectionChanged(null, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
@@ -99,6 +115,7 @@ namespace EarTrumpet.UI.ViewModels
             }
 
             InvalidateWindowSize();
+            RefreshMixerApps();
         }
 
         private void RemoveDevice(string id)
@@ -143,6 +160,149 @@ namespace EarTrumpet.UI.ViewModels
 
             UpdateTextVisibility();
             RaiseDevicesChanged();
+            SyncSoundOutput();
+        }
+
+        private void SyncSoundOutput()
+        {
+            var selectedId = _mainViewModel.Default?.Id;
+            var devices = _mainViewModel.AllDevices.ToList();
+            var sameDevices = PlaybackDevices.Count == devices.Count;
+            if (sameDevices)
+            {
+                var known = new HashSet<string>(PlaybackDevices.Select(row => row.Device.Id));
+                sameDevices = devices.All(device => known.Contains(device.Id));
+            }
+
+            if (!sameDevices)
+            {
+                foreach (var row in PlaybackDevices)
+                {
+                    row.Detach();
+                }
+
+                PlaybackDevices.Clear();
+                foreach (var device in devices
+                    .OrderByDescending(device => device.Id == selectedId)
+                    .ThenBy(device => device.DisplayName, StringComparer.CurrentCultureIgnoreCase))
+                {
+                    var captured = device;
+                    PlaybackDevices.Add(new SoundOutputDeviceViewModel(captured, () => captured.MakeDefaultDevice(), captured.Id == selectedId));
+                }
+            }
+            else
+            {
+                foreach (var row in PlaybackDevices)
+                {
+                    row.IsSelected = row.Device.Id == selectedId;
+                }
+
+                var ordered = PlaybackDevices
+                    .OrderByDescending(row => row.IsSelected)
+                    .ThenBy(row => row.DisplayName, StringComparer.CurrentCultureIgnoreCase)
+                    .ToList();
+                for (var i = 0; i < ordered.Count; i++)
+                {
+                    var index = PlaybackDevices.IndexOf(ordered[i]);
+                    if (index != i)
+                    {
+                        PlaybackDevices.Move(index, i);
+                    }
+                }
+            }
+
+            if (_glyphDevice != _mainViewModel.Default)
+            {
+                if (_glyphDevice != null)
+                {
+                    _glyphDevice.PropertyChanged -= OnDefaultDeviceVisualChanged;
+                }
+
+                _glyphDevice = _mainViewModel.Default;
+                if (_glyphDevice != null)
+                {
+                    _glyphDevice.PropertyChanged += OnDefaultDeviceVisualChanged;
+                }
+            }
+
+            RaisePropertyChanged(nameof(DefaultDevice));
+            RaisePropertyChanged(nameof(DefaultDeviceGlyph));
+            HookDeviceApps();
+            RefreshMixerApps();
+        }
+
+        private void HookDeviceApps()
+        {
+            foreach (var device in _hookedDevices)
+            {
+                device.Apps.CollectionChanged -= OnMixerAppsChanged;
+            }
+
+            _hookedDevices.Clear();
+            foreach (var device in _mainViewModel.AllDevices)
+            {
+                device.Apps.CollectionChanged += OnMixerAppsChanged;
+                _hookedDevices.Add(device);
+            }
+        }
+
+        private void OnMixerAppsChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            RefreshMixerApps();
+        }
+
+        private void OnDefaultDeviceVisualChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(DeviceViewModel.IsMuted) ||
+                e.PropertyName == nameof(DeviceViewModel.Volume) ||
+                e.PropertyName == nameof(DeviceViewModel.DisplayName))
+            {
+                RaisePropertyChanged(nameof(DefaultDeviceGlyph));
+            }
+        }
+
+        private void RefreshMixerApps()
+        {
+            var desired = new List<IAppItemViewModel>();
+            var device = _mainViewModel.Default;
+            if (device != null)
+            {
+                foreach (var app in device.Apps)
+                {
+                    if (TaskbarAppVisibility.IsVisibleMixerApp(app))
+                    {
+                        desired.Add(app);
+                    }
+                }
+
+                desired.Sort((left, right) => string.Compare(left.DisplayName, right.DisplayName, StringComparison.CurrentCultureIgnoreCase));
+            }
+
+            var same = desired.Count == MixerApps.Count;
+            if (same)
+            {
+                for (var i = 0; i < desired.Count; i++)
+                {
+                    if (!string.Equals(desired[i].Id, MixerApps[i].Id, StringComparison.Ordinal))
+                    {
+                        same = false;
+                        break;
+                    }
+                }
+            }
+
+            if (same)
+            {
+                return;
+            }
+
+            MixerApps.Clear();
+            foreach (var app in desired)
+            {
+                MixerApps.Add(app);
+            }
+
+            InvalidateWindowSize();
         }
 
         private void RaiseDevicesChanged()
@@ -155,8 +315,11 @@ namespace EarTrumpet.UI.ViewModels
 
         private void OnDefaultPlaybackDeviceChanged(object sender, DeviceViewModel e)
         {
-            // No longer any devices.
-            if (e == null) return;
+            if (e == null)
+            {
+                SyncSoundOutput();
+                return;
+            }
 
             var foundDevice = Devices.FirstOrDefault(d => d.Id == e.Id);
             if (foundDevice != null)
@@ -178,6 +341,7 @@ namespace EarTrumpet.UI.ViewModels
             }
             UpdateTextVisibility();
             RaiseDevicesChanged();
+            SyncSoundOutput();
         }
 
         private void UpdateTextVisibility()

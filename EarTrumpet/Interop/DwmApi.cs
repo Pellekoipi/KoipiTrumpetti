@@ -6,6 +6,7 @@ namespace EarTrumpet.Interop
     class DwmApi
     {
         internal const int DWMA_CLOAK = 13;
+        internal const int DWMWA_CLOAKED = 14;
         internal const int DWMWA_WINDOW_CORNER_PREFERENCE = 33;
 
         internal enum DWM_WINDOW_CORNER_PREFERENCE
@@ -21,6 +22,13 @@ namespace EarTrumpet.Interop
             IntPtr hwnd,
             int attr,
             ref int attrValue,
+            int attrSize);
+
+        [DllImport("dwmapi.dll", PreserveSig = true)]
+        internal static extern int DwmGetWindowAttribute(
+            IntPtr hwnd,
+            int attr,
+            out int attrValue,
             int attrSize);
     }
 }

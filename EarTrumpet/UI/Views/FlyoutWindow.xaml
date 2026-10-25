@@ -6,10 +6,8 @@
         xmlns:b="clr-namespace:EarTrumpet.UI.Behaviors"
         xmlns:ctl="clr-namespace:EarTrumpet.UI.Controls"
         xmlns:resx="clr-namespace:EarTrumpet.Properties"
-        xmlns:views="clr-namespace:EarTrumpet.UI.Views"
-        xmlns:vm="clr-namespace:EarTrumpet.UI.ViewModels"
-        Title="EarTrumpet"
-        Width="{StaticResource WindowAndItemSize}"
+        Title="{x:Static resx:Resources.SoundOutputTitle}"
+        Width="392"
         Theme:Brush.Foreground="Text"
         Theme:Options.Scope="Flyout"
         Theme:Options.Source="System"
@@ -19,6 +17,8 @@
         Background="Transparent"
         Closing="{Event:Binding OnClosing}"
         Deactivated="{Event:Binding OnDeactivated}"
+        FontFamily="Segoe UI Variable Text, Segoe UI"
+        FontSize="14"
         Icon="{Binding Source={StaticResource EarTrumpetIconLight}}"
         PreviewKeyDown="{Event:Binding OnPreviewKeyDown}"
         ResizeMode="NoResize"
@@ -28,261 +28,375 @@
         UseLayoutRounding="True"
         WindowStyle="None">
     <Window.Resources>
-        <Style x:Key="ExpandCollapseButtonStyle" TargetType="Button">
+        <Style x:Key="SoundOutputIconButton" TargetType="Button">
+            <Setter Property="Width" Value="32" />
+            <Setter Property="Height" Value="32" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="MinWidth" Value="0" />
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-            <Setter Property="VerticalAlignment" Value="Top" />
-            <Setter Property="Theme:Brush.Foreground" Value="Theme=Text, HighContrast=ControlText" />
-            <Setter Property="FocusVisualStyle" Value="{StaticResource Windows10FocusVisualStyle}" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="border"
+                        <Border x:Name="Chrome"
                                 Background="{TemplateBinding Background}"
-                                SnapsToDevicePixels="True">
-                            <ContentPresenter RecognizesAccessKey="True" />
+                                CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Chrome" Property="Background" Value="#18FFFFFF" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Chrome" Property="Background" Value="#28FFFFFF" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="true">
-                    <Setter Property="Theme:Brush.Background" Value="Theme=#20FFFFFF, HighContrast=Highlight" />
-                    <Setter Property="Theme:Brush.Foreground" Value="Theme=ApplicationText{Theme}Theme, HighContrast=HighlightText" />
-                </Trigger>
-                <Trigger Property="IsPressed" Value="true">
-                    <Setter Property="Theme:Brush.Background" Value="Theme=#2FFFFFFF, HighContrast=Highlight" />
-                    <Setter Property="Theme:Brush.Foreground" Value="Theme=ApplicationText{Theme}Theme, HighContrast=HighlightText" />
-                </Trigger>
-                <MultiTrigger>
-                    <MultiTrigger.Conditions>
-                        <Condition Property="IsMouseOver" Value="True" />
-                        <Condition Property="Theme:OS.IsWindows11" Value="True" />
-                    </MultiTrigger.Conditions>
-                    <MultiTrigger.Setters>
-                        <Setter Property="Theme:Brush.Background" Value="Theme=Control{Theme}SelectHighlightHover, HighContrast=Highlight" />
-                        <Setter Property="Theme:Brush.Foreground" Value="Theme=ApplicationText{Theme}Theme, HighContrast=HighlightText" />
-                    </MultiTrigger.Setters>
-                </MultiTrigger>
-                <MultiTrigger>
-                    <MultiTrigger.Conditions>
-                        <Condition Property="IsPressed" Value="True" />
-                        <Condition Property="Theme:OS.IsWindows11" Value="True" />
-                    </MultiTrigger.Conditions>
-                    <MultiTrigger.Setters>
-                        <Setter Property="Theme:Brush.Background" Value="Theme=Control{Theme}SelectHighlightHover/0.20, HighContrast=Highlight" />
-                        <Setter Property="Theme:Brush.Foreground" Value="Theme=ApplicationText{Theme}Theme, HighContrast=HighlightText" />
-                    </MultiTrigger.Setters>
-                </MultiTrigger>
-            </Style.Triggers>
         </Style>
 
-        <Style x:Key="{x:Type ScrollViewer}"
-               BasedOn="{StaticResource {x:Type ScrollViewer}}"
-               TargetType="{x:Type ScrollViewer}">
-            <Setter Property="CanContentScroll" Value="True" />
-            <Setter Property="PanningMode" Value="VerticalOnly" />
-            <Setter Property="Focusable" Value="False" />
+        <Style x:Key="SoundOutputLinkButton" TargetType="Button">
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="16,12" />
             <Setter Property="Margin" Value="0" />
+            <Setter Property="MinWidth" Value="0" />
+            <Setter Property="Height" Value="44" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Chrome"
+                                Padding="{TemplateBinding Padding}"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Chrome" Property="Background" Value="#14FFFFFF" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Chrome" Property="Background" Value="#22FFFFFF" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
-        <DataTemplate DataType="{x:Type vm:DeviceViewModel}">
-            <views:DeviceView Width="{StaticResource WindowAndItemSize}"
-                              Device="{Binding}"
-                              IsDisplayNameVisible="{Binding IsDisplayNameVisible}" />
-        </DataTemplate>
-    </Window.Resources>
-    <Grid x:Name="LayoutRoot">
-        <ScrollViewer Name="BaseVisual" VerticalScrollBarVisibility="Auto">
-            <Grid Name="ContentGrid" VerticalAlignment="Top">
 
-                <Border VerticalAlignment="Center" Theme:Brush.Background="FlyoutBackground">
-                    <Border.Style>
-                        <Style TargetType="Border">
+        <Style x:Key="SoundOutputSlider" BasedOn="{StaticResource {x:Type Slider}}" TargetType="ctl:VolumeSlider">
+            <Setter Property="Height" Value="28" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="IsTabStop" Value="False" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ctl:VolumeSlider">
+                        <Grid Height="28" VerticalAlignment="Center">
+                            <Border Height="4"
+                                    VerticalAlignment="Center"
+                                    CornerRadius="2"
+                                    Theme:Brush.Background="Light=#33000000, Dark=#33FFFFFF, HighContrast=WindowText" />
+                            <Track x:Name="PART_Track" VerticalAlignment="Center">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="Slider.DecreaseLarge" Focusable="False" IsTabStop="False">
+                                        <RepeatButton.Template>
+                                            <ControlTemplate TargetType="RepeatButton">
+                                                <Border Height="4"
+                                                        VerticalAlignment="Center"
+                                                        CornerRadius="2"
+                                                        Theme:Brush.Background="Theme=SystemAccent, HighContrast=Highlight" />
+                                            </ControlTemplate>
+                                        </RepeatButton.Template>
+                                    </RepeatButton>
+                                </Track.DecreaseRepeatButton>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="Slider.IncreaseLarge" Focusable="False" IsTabStop="False">
+                                        <RepeatButton.Template>
+                                            <ControlTemplate TargetType="RepeatButton">
+                                                <Border Height="4" Background="Transparent" />
+                                            </ControlTemplate>
+                                        </RepeatButton.Template>
+                                    </RepeatButton>
+                                </Track.IncreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb x:Name="SliderThumb"
+                                           Width="16"
+                                           Height="16"
+                                           Theme:Brush.Foreground="Theme=SystemAccent, HighContrast=Highlight">
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="Thumb">
+                                                <Ellipse Width="16"
+                                                         Height="16"
+                                                         Fill="{TemplateBinding Foreground}" />
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid x:Name="LayoutRoot" Theme:Brush.Background="FlyoutBackground">
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <Grid Margin="8,8,8,2" Height="40">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Button x:Name="BackButton"
+                            AutomationProperties.Name="{x:Static resx:Resources.CloseButtonAccessibleText}"
+                            Command="{Binding CloseFlyout}"
+                            Style="{StaticResource SoundOutputIconButton}">
+                        <TextBlock FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                   FontSize="14"
+                                   Text="&#xE72B;"
+                                   Theme:Brush.Foreground="Text" />
+                    </Button>
+                    <TextBlock Grid.Column="1"
+                               Margin="8,0,8,0"
+                               VerticalAlignment="Center"
+                               FontFamily="Segoe UI Variable Display, Segoe UI Variable Text, Segoe UI"
+                               FontSize="16"
+                               FontWeight="SemiBold"
+                               Text="{x:Static resx:Resources.SoundOutputTitle}"
+                               Theme:Brush.Foreground="Text" />
+                </Grid>
+
+                <TextBlock Margin="16,8,16,6"
+                           FontWeight="SemiBold"
+                           Text="{x:Static resx:Resources.PlaybackDeviceHeader}"
+                           Theme:Brush.Foreground="Text" />
+
+                <TextBlock Margin="16,0,16,12"
+                           Text="{x:Static resx:Resources.NoDevicesPanelContent}"
+                           TextWrapping="Wrap"
+                           Theme:Brush.Foreground="Text">
+                    <TextBlock.Style>
+                        <Style BasedOn="{StaticResource {x:Type TextBlock}}" TargetType="TextBlock">
                             <Setter Property="Visibility" Value="Collapsed" />
                             <Style.Triggers>
-                                <DataTrigger Binding="{Binding Devices.Count}" Value="0">
+                                <DataTrigger Binding="{Binding PlaybackDevices.Count}" Value="0">
                                     <Setter Property="Visibility" Value="Visible" />
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </Border.Style>
-                    <TextBlock Margin="{StaticResource NoItemsPaneMargin}"
-                               HorizontalAlignment="Center"
-                               FontSize="{StaticResource {x:Static SystemFonts.MessageFontSizeKey}}"
-                               Text="{x:Static resx:Resources.NoDevicesPanelContent}"
-                               TextWrapping="Wrap" />
-                </Border>
-                <Grid>
+                    </TextBlock.Style>
+                </TextBlock>
+
+                <ItemsControl Margin="8,0,8,4" ItemsSource="{Binding PlaybackDevices}">
+                    <ItemsControl.ItemContainerStyle>
+                        <Style TargetType="ContentPresenter">
+                            <Setter Property="HorizontalAlignment" Value="Stretch" />
+                        </Style>
+                    </ItemsControl.ItemContainerStyle>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Margin="0,1"
+                                    HorizontalAlignment="Stretch"
+                                    HorizontalContentAlignment="Stretch"
+                                    Command="{Binding Select}"
+                                    FocusVisualStyle="{x:Null}">
+                                <Button.Style>
+                                    <Style TargetType="Button">
+                                        <Setter Property="Background" Value="Transparent" />
+                                        <Setter Property="BorderThickness" Value="0" />
+                                        <Setter Property="Padding" Value="0" />
+                                        <Setter Property="Margin" Value="0,1" />
+                                        <Setter Property="MinWidth" Value="0" />
+                                        <Setter Property="Height" Value="Auto" />
+                                        <Setter Property="HorizontalAlignment" Value="Stretch" />
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="Row"
+                                                            MinHeight="40"
+                                                            Padding="6,6,10,6"
+                                                            Background="Transparent"
+                                                            BorderThickness="1"
+                                                            CornerRadius="4"
+                                                            Theme:Brush.BorderBrush="Transparent">
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="16" />
+                                                                <ColumnDefinition Width="28" />
+                                                                <ColumnDefinition Width="*" />
+                                                            </Grid.ColumnDefinitions>
+                                                            <Border Width="3"
+                                                                    Height="16"
+                                                                    HorizontalAlignment="Left"
+                                                                    VerticalAlignment="Center"
+                                                                    CornerRadius="1.5"
+                                                                    Theme:Brush.Background="Theme=SystemAccent, HighContrast=Highlight">
+                                                                <Border.Style>
+                                                                    <Style TargetType="Border">
+                                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                                                <Setter Property="Visibility" Value="Visible" />
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </Border.Style>
+                                                            </Border>
+                                                            <TextBlock Grid.Column="1"
+                                                                       HorizontalAlignment="Center"
+                                                                       VerticalAlignment="Center"
+                                                                       FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                                       FontSize="16"
+                                                                       Text="{Binding Glyph}"
+                                                                       Theme:Brush.Foreground="Text" />
+                                                            <TextBlock Grid.Column="2"
+                                                                       VerticalAlignment="Center"
+                                                                       Text="{Binding DisplayName}"
+                                                                       TextTrimming="CharacterEllipsis"
+                                                                       Theme:Brush.Foreground="Text" />
+                                                        </Grid>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                            <Setter TargetName="Row" Property="Theme:Brush.BorderBrush" Value="Light=#1A1A1A, Dark=#FFFFFF, HighContrast=WindowText" />
+                                                        </DataTrigger>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="Row" Property="Background" Value="#14FFFFFF" />
+                                                        </Trigger>
+                                                        <Trigger Property="IsPressed" Value="True">
+                                                            <Setter TargetName="Row" Property="Background" Value="#22FFFFFF" />
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </Button.Style>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <Grid Margin="16,12,8,4">
                     <Grid.Style>
                         <Style TargetType="Grid">
+                            <Setter Property="Visibility" Value="Visible" />
                             <Style.Triggers>
-                                <DataTrigger Binding="{Binding Devices.Count}" Value="0">
+                                <DataTrigger Binding="{Binding DefaultDevice}" Value="{x:Null}">
                                     <Setter Property="Visibility" Value="Collapsed" />
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
                     </Grid.Style>
-                    <ItemsControl Name="DevicesList"
-                                  FocusVisualStyle="{x:Null}"
-                                  IsTabStop="False"
-                                  ItemsSource="{Binding Devices}" />
-                    <Button Height="{DynamicResource Mutable_DeviceTitleCellHeight}"
-                            Command="{Binding ExpandCollapse}"
-                            IsEnabled="{Binding CanExpand}">
-                        <Button.Style>
-                            <Style BasedOn="{StaticResource ExpandCollapseButtonStyle}" TargetType="{x:Type Button}">
-                                <Style.Triggers>
-                                    <MultiDataTrigger>
-                                        <MultiDataTrigger.Conditions>
-                                            <Condition Binding="{Binding CanExpand}" Value="True" />
-                                            <Condition Binding="{Binding IsExpanded}" Value="True" />
-                                        </MultiDataTrigger.Conditions>
-                                        <Setter Property="AutomationProperties.Name" Value="{x:Static resx:Resources.CollapseAccessibleText}" />
-                                    </MultiDataTrigger>
-                                    <MultiDataTrigger>
-                                        <MultiDataTrigger.Conditions>
-                                            <Condition Binding="{Binding CanExpand}" Value="True" />
-                                            <Condition Binding="{Binding IsExpanded}" Value="False" />
-                                        </MultiDataTrigger.Conditions>
-                                        <Setter Property="AutomationProperties.Name" Value="{x:Static resx:Resources.ExpandAccessibleText}" />
-                                    </MultiDataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Button.Style>
-                        <Button.Content>
-                            <Grid>
-                                <TextBlock Margin="12,0,32,0"
-                                           HorizontalAlignment="Left"
-                                           Theme:Brush.Foreground="{Binding (Theme:Brush.Foreground), RelativeSource={RelativeSource AncestorType=Button}}"
-                                           Style="{StaticResource DeviceTitleTextStyle}"
-                                           Text="{Binding DeviceNameText}"
-                                           TextTrimming="CharacterEllipsis" />
-                                <TextBlock Margin="{StaticResource WindowMargin}"
-                                           HorizontalAlignment="Right"
-                                           Theme:Brush.Foreground="{Binding (Theme:Brush.Foreground), RelativeSource={RelativeSource AncestorType=Button}}"
-                                           FontSize="{DynamicResource Mutable_ExpandCollapseButtonGlyphFontSize}">
-                                    <TextBlock.Style>
-                                        <Style BasedOn="{StaticResource GlyphTextBlockStyle}" TargetType="{x:Type TextBlock}">
-                                            <Style.Triggers>
-                                                <MultiDataTrigger>
-                                                    <MultiDataTrigger.Conditions>
-                                                        <Condition Binding="{Binding CanExpand}" Value="True" />
-                                                        <Condition Binding="{Binding IsExpanded}" Value="True" />
-                                                    </MultiDataTrigger.Conditions>
-                                                    <Setter Property="Text" Value="&#xe011;" />
-                                                </MultiDataTrigger>
-                                                <MultiDataTrigger>
-                                                    <MultiDataTrigger.Conditions>
-                                                        <Condition Binding="{Binding CanExpand}" Value="True" />
-                                                        <Condition Binding="{Binding IsExpanded}" Value="False" />
-                                                    </MultiDataTrigger.Conditions>
-                                                    <Setter Property="Text" Value="&#xe010;" />
-                                                </MultiDataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </TextBlock.Style>
-                                </TextBlock>
-                            </Grid>
-                        </Button.Content>
+                    <TextBlock VerticalAlignment="Center"
+                               FontWeight="SemiBold"
+                               Text="{x:Static resx:Resources.LegacyVolumeMixerText}"
+                               Theme:Brush.Foreground="Text" />
+                    <Button HorizontalAlignment="Right"
+                            AutomationProperties.Name="{x:Static resx:Resources.OpenAppsVolume_Windows11_Text}"
+                            Command="{Binding OpenVolumeMixerSettings}"
+                            Style="{StaticResource SoundOutputIconButton}"
+                            ToolTip="{x:Static resx:Resources.SettingsWindowText}">
+                        <TextBlock FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                   FontSize="16"
+                                   Text="&#xE713;"
+                                   Theme:Brush.Foreground="Text" />
                     </Button>
                 </Grid>
-            </Grid>
+
+                <Grid Margin="14,2,16,2" Height="36">
+                    <Grid.Style>
+                        <Style TargetType="Grid">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding DefaultDevice}" Value="{x:Null}">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Grid.Style>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="32" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Button AutomationProperties.Name="{x:Static resx:Resources.ToggleMuteToolTip}"
+                            Command="{Binding DefaultDevice.ToggleMute}"
+                            Style="{StaticResource SoundOutputIconButton}"
+                            ToolTip="{x:Static resx:Resources.ToggleMuteToolTip}">
+                        <TextBlock FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                   FontSize="16"
+                                   Text="{Binding DefaultDeviceGlyph}"
+                                   Theme:Brush.Foreground="Text" />
+                    </Button>
+                    <ctl:VolumeSlider Grid.Column="1"
+                                      AutomationProperties.Name="{Binding DefaultDevice.DisplayName}"
+                                      Style="{StaticResource SoundOutputSlider}"
+                                      Value="{Binding DefaultDevice.Volume, Mode=TwoWay}" />
+                </Grid>
+
+                <ItemsControl Margin="0,2,0,6" ItemsSource="{Binding MixerApps}">
+                    <ItemsControl.ItemContainerStyle>
+                        <Style TargetType="ContentPresenter">
+                            <Setter Property="HorizontalAlignment" Value="Stretch" />
+                        </Style>
+                    </ItemsControl.ItemContainerStyle>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Height="36" Margin="14,1,16,1">
+                                <Grid.Style>
+                                    <Style TargetType="Grid">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsMuted}" Value="True">
+                                                <Setter Property="Opacity" Value="0.45" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Grid.Style>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="32" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid Width="20" Height="20" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <TextBlock HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               FontSize="11"
+                                               FontWeight="SemiBold"
+                                               Text="{Binding IconText}"
+                                               Theme:Brush.Foreground="Text" />
+                                    <ctl:ImageEx Width="20"
+                                                 Height="20"
+                                                 SourceEx="{Binding}"
+                                                 Stretch="Uniform" />
+                                </Grid>
+                                <ctl:VolumeSlider Grid.Column="1"
+                                                  AutomationProperties.Name="{Binding DisplayName}"
+                                                  Style="{StaticResource SoundOutputSlider}"
+                                                  ToolTip="{Binding DisplayName}"
+                                                  Value="{Binding Volume, Mode=TwoWay}" />
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <Button Margin="4,4,4,8"
+                        AutomationProperties.Name="{x:Static resx:Resources.MoreVolumeSettingsText}"
+                        Command="{Binding OpenSoundSettings}"
+                        Style="{StaticResource SoundOutputLinkButton}">
+                    <TextBlock FontSize="14"
+                               Text="{x:Static resx:Resources.MoreVolumeSettingsText}"
+                               Theme:Brush.Foreground="Text" />
+                </Button>
+            </StackPanel>
         </ScrollViewer>
-        <Border Name="LightDismissBorder"
-                Theme:Brush.Background="Background"
-                PreviewMouseDown="{Event:Binding OnLightDismissBorderPreviewMouseDown}">
-            <Border.Style>
-                <Style TargetType="{x:Type Border}">
-                    <Setter Property="Visibility" Value="Collapsed" />
-                    <Style.Triggers>
-                        <MultiDataTrigger>
-                            <MultiDataTrigger.Conditions>
-                                <Condition Binding="{Binding Dialog.IsVisible}" Value="True" />
-                                <Condition Binding="{Binding Source={StaticResource ThemeManager}, Path=AnimationsEnabled}" Value="True" />
-                            </MultiDataTrigger.Conditions>
-                            <MultiDataTrigger.EnterActions>
-                                <StopStoryboard BeginStoryboardName="EnterLightDismiss_AnimationsOff" />
-                                <StopStoryboard BeginStoryboardName="ExitLightDismiss_AnimationsOff" />
-                                <BeginStoryboard Name="EnterLightDismiss_AnimationsOn">
-                                    <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                                                         From="0"
-                                                         To="1"
-                                                         Duration="00:00:00.15" />
-                                        <ObjectAnimationUsingKeyFrames BeginTime="00:00:00" Storyboard.TargetProperty="(UIElement.Visibility)">
-                                            <DiscreteObjectKeyFrame KeyTime="00:00:00" Value="{x:Static Visibility.Visible}" />
-                                        </ObjectAnimationUsingKeyFrames>
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </MultiDataTrigger.EnterActions>
-                            <MultiDataTrigger.ExitActions>
-                                <StopStoryboard BeginStoryboardName="EnterLightDismiss_AnimationsOff" />
-                                <StopStoryboard BeginStoryboardName="ExitLightDismiss_AnimationsOff" />
-                                <BeginStoryboard Name="ExitLightDismiss_AnimationsOn">
-                                    <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                                                         From="1"
-                                                         To="0"
-                                                         Duration="00:00:00.15" />
-                                        <ObjectAnimationUsingKeyFrames BeginTime="00:00:00" Storyboard.TargetProperty="(UIElement.Visibility)">
-                                            <DiscreteObjectKeyFrame KeyTime="00:00:00.15" Value="{x:Static Visibility.Collapsed}" />
-                                        </ObjectAnimationUsingKeyFrames>
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </MultiDataTrigger.ExitActions>
-                        </MultiDataTrigger>
-
-                        <MultiDataTrigger>
-                            <MultiDataTrigger.Conditions>
-                                <Condition Binding="{Binding Dialog.IsVisible}" Value="True" />
-                                <Condition Binding="{Binding Source={StaticResource ThemeManager}, Path=AnimationsEnabled}" Value="False" />
-                            </MultiDataTrigger.Conditions>
-                            <MultiDataTrigger.EnterActions>
-                                <StopStoryboard BeginStoryboardName="EnterLightDismiss_AnimationsOn" />
-                                <StopStoryboard BeginStoryboardName="ExitLightDismiss_AnimationsOn" />
-                                <BeginStoryboard Name="EnterLightDismiss_AnimationsOff">
-                                    <Storyboard>
-                                        <ObjectAnimationUsingKeyFrames BeginTime="00:00:00" Storyboard.TargetProperty="(UIElement.Visibility)">
-                                            <DiscreteObjectKeyFrame KeyTime="00:00:00" Value="{x:Static Visibility.Visible}" />
-                                        </ObjectAnimationUsingKeyFrames>
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </MultiDataTrigger.EnterActions>
-                            <MultiDataTrigger.ExitActions>
-                                <StopStoryboard BeginStoryboardName="EnterLightDismiss_AnimationsOn" />
-                                <StopStoryboard BeginStoryboardName="ExitLightDismiss_AnimationsOn" />
-                                <BeginStoryboard Name="ExitLightDismiss_AnimationsOff">
-                                    <Storyboard>
-                                        <ObjectAnimationUsingKeyFrames BeginTime="00:00:00" Storyboard.TargetProperty="(UIElement.Visibility)">
-                                            <DiscreteObjectKeyFrame KeyTime="00:00:00" Value="{x:Static Visibility.Collapsed}" />
-                                        </ObjectAnimationUsingKeyFrames>
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </MultiDataTrigger.ExitActions>
-                        </MultiDataTrigger>
-                    </Style.Triggers>
-                </Style>
-            </Border.Style>
-            <Border Margin="0,0,0,14">
-                <Border.Effect>
-                    <BlurEffect KernelType="Gaussian"
-                                Radius="{StaticResource WindowBlurRadius}"
-                                RenderingBias="Performance" />
-                </Border.Effect>
-                <Border.Background>
-
-                    <VisualBrush AlignmentX="Left"
-                                 AlignmentY="Top"
-                                 Stretch="UniformToFill"
-                                 Visual="{Binding ElementName=BaseVisual}" />
-                </Border.Background>
-            </Border>
-        </Border>
-        <ctl:AppPopup IsOpen="{Binding Dialog.IsVisible, Mode=TwoWay}"
-                      PlacementTarget="{Binding Dialog.Source}"
-                      Style="{StaticResource AppPopup}">
-            <ContentControl Content="{Binding Dialog.Focused}" />
-        </ctl:AppPopup>
     </Grid>
 </Window>

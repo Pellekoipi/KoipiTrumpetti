@@ -36,6 +36,7 @@ namespace EarTrumpet.UI.ViewModels
         public int ProcessId => _session.ProcessId;
         public ObservableCollection<IAppItemViewModel> ChildApps { get; private set; }
 
+        public bool IsSystemSoundsSession => _session.IsSystemSoundsSession;
         public bool IsMovable => !_session.IsSystemSoundsSession &&
                                   Environment.OSVersion.IsAtLeast(OSVersions.RS4);
         public string PersistedOutputDevice => _session.Parent.Parent is IAudioDeviceManagerWindowsAudio ?

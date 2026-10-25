@@ -39,6 +39,13 @@
                             <Theme:Rule Value="#39FFFFFF" />
                         </Theme:Ref.Rules>
                     </Theme:Ref>
+                    <Theme:Ref Key="AcrylicColor_SoundOutput">
+                        <Theme:Ref.Rules>
+                            <Theme:Rule On="HighContrast" Value="#000000/0.92" />
+                            <Theme:Rule On="LightTheme" Value="#F3F3F3/0.9" />
+                            <Theme:Rule Value="#1B2030/0.88" />
+                        </Theme:Ref.Rules>
+                    </Theme:Ref>
                     <Theme:Ref Key="AcrylicColor_Flyout">
                         <Theme:Ref.Rules>
                             <Theme:Rule On="UseAccentColor" Value="SystemAccentDark1/0.8" />

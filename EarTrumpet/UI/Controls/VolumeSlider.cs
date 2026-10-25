@@ -41,11 +41,35 @@ namespace EarTrumpet.UI.Controls
             Loaded += OnLoaded;
         }
 
+        public override void OnApplyTemplate()
+        {
+            base.OnApplyTemplate();
+            // The device row is collapsed until a playback device exists. Loaded then runs
+            // before this slider is measured, so a lookup there leaves the thumb null.
+            CacheTemplateParts();
+        }
+
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
-            _thumb = (Thumb)GetTemplateChild("SliderThumb");
-            _peakMeter1 = (Border)GetTemplateChild("PeakMeter1");
-            _peakMeter2 = (Border)GetTemplateChild("PeakMeter2");
+            CacheTemplateParts();
+        }
+
+        private void CacheTemplateParts()
+        {
+            _thumb = GetTemplateChild("SliderThumb") as Thumb;
+            _peakMeter1 = GetTemplateChild("PeakMeter1") as Border;
+            _peakMeter2 = GetTemplateChild("PeakMeter2") as Border;
+        }
+
+        private void EnsureTemplateParts()
+        {
+            if (_thumb != null)
+            {
+                return;
+            }
+
+            ApplyTemplate();
+            CacheTemplateParts();
         }
 
         protected override Size ArrangeOverride(Size arrangeBounds)
@@ -62,89 +86,139 @@ namespace EarTrumpet.UI.Controls
 
         private void SizeOrVolumeOrPeakValueChanged()
         {
+            if (_thumb == null || (_peakMeter1 == null && _peakMeter2 == null))
+            {
+                return;
+            }
+
+            var thumbWidth = _thumb.ActualWidth;
             if (_peakMeter1 != null)
             {
-                _peakMeter1.Width = Math.Max(0, (ActualWidth - _thumb.ActualWidth) * PeakValue1 * (Value / 100f));
+                _peakMeter1.Width = Math.Max(0, (ActualWidth - thumbWidth) * PeakValue1 * (Value / 100f));
             }
 
             if (_peakMeter2 != null)
             {
-                _peakMeter2.Width = Math.Max(0, (ActualWidth - _thumb.ActualWidth) * PeakValue2 * (Value / 100f));
+                _peakMeter2.Width = Math.Max(0, (ActualWidth - thumbWidth) * PeakValue2 * (Value / 100f));
             }
         }
 
         private void OnTouchDown(object sender, TouchEventArgs e)
         {
-            VisualStateManager.GoToState((FrameworkElement)sender, "Pressed", true);
+            if (e == null)
+            {
+                return;
+            }
 
-            SetPositionByControlPoint(e.GetTouchPoint(this).Position);
-            CaptureTouch(e.TouchDevice);
+            if (sender is FrameworkElement element)
+            {
+                VisualStateManager.GoToState(element, "Pressed", true);
+            }
+
+            var touchPoint = e.TouchDevice == null ? new Point() : e.GetTouchPoint(this).Position;
+            SetPositionByControlPoint(touchPoint);
+            if (e.TouchDevice != null)
+            {
+                CaptureTouch(e.TouchDevice);
+            }
 
             e.Handled = true;
         }
 
         private void OnMouseDown(object sender, MouseButtonEventArgs e)
         {
-            if (e.LeftButton == MouseButtonState.Pressed)
+            if (e == null || e.LeftButton != MouseButtonState.Pressed)
             {
-                _lastMousePosition = e.GetPosition(this);
-                VisualStateManager.GoToState((FrameworkElement)sender, "Pressed", true);
-
-                if (!_thumb.IsMouseOver)
-                {
-                    SetPositionByControlPoint(_lastMousePosition);
-                }
-
-                CaptureMouse();
-                e.Handled = true;
+                return;
             }
+
+            EnsureTemplateParts();
+            _lastMousePosition = e.GetPosition(this);
+            if (sender is FrameworkElement element)
+            {
+                VisualStateManager.GoToState(element, "Pressed", true);
+            }
+
+            if (_thumb == null || !_thumb.IsMouseOver)
+            {
+                SetPositionByControlPoint(_lastMousePosition);
+            }
+
+            CaptureMouse();
+            e.Handled = true;
         }
 
         private void OnTouchUp(object sender, TouchEventArgs e)
         {
-            VisualStateManager.GoToState((FrameworkElement)sender, "Normal", true);
+            if (e == null)
+            {
+                return;
+            }
 
-            ReleaseTouchCapture(e.TouchDevice);
+            if (sender is FrameworkElement element)
+            {
+                VisualStateManager.GoToState(element, "Normal", true);
+            }
+
+            if (e.TouchDevice != null)
+            {
+                ReleaseTouchCapture(e.TouchDevice);
+            }
+
             e.Handled = true;
         }
 
         private void OnMouseUp(object sender, MouseButtonEventArgs e)
         {
-            if (IsMouseCaptured)
+            if (e == null || !IsMouseCaptured)
             {
-                // If the point is outside of the control, clear the hover state.
-                Rect rcSlider = new Rect(0, 0, ActualWidth, ActualHeight);
-                if (!rcSlider.Contains(e.GetPosition(this)))
-                {
-                    VisualStateManager.GoToState((FrameworkElement)sender, "Normal", true);
-                }
-
-                ReleaseMouseCapture();
-                e.Handled = true;
+                return;
             }
+
+            // If the point is outside of the control, clear the hover state.
+            Rect rcSlider = new Rect(0, 0, ActualWidth, ActualHeight);
+            if (!rcSlider.Contains(e.GetPosition(this)) && sender is FrameworkElement element)
+            {
+                VisualStateManager.GoToState(element, "Normal", true);
+            }
+
+            ReleaseMouseCapture();
+            e.Handled = true;
         }
 
         private void OnTouchMove(object sender, TouchEventArgs e)
         {
-            if (AreAnyTouchesCaptured)
+            if (e == null || !AreAnyTouchesCaptured || e.TouchDevice == null)
             {
-                SetPositionByControlPoint(e.GetTouchPoint(this).Position);
-                e.Handled = true;
+                return;
             }
+
+            SetPositionByControlPoint(e.GetTouchPoint(this).Position);
+            e.Handled = true;
         }
 
         private void OnMouseMove(object sender, MouseEventArgs e)
         {
+            if (e == null)
+            {
+                return;
+            }
+
             var mousePosition = e.GetPosition(this);
             if (IsMouseCaptured && mousePosition != _lastMousePosition)
             {
                 _lastMousePosition = mousePosition;
-                SetPositionByControlPoint(e.GetPosition(this));
+                SetPositionByControlPoint(mousePosition);
             }
         }
 
         private void OnMouseWheel(object sender, MouseWheelEventArgs e)
         {
+            if (e == null)
+            {
+                return;
+            }
+
             var amount = Math.Sign(e.Delta) * 2.0;
             ChangePositionByAmount(amount);
             e.Handled = true;

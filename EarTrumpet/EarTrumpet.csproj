@@ -64,11 +64,7 @@
       <RequiredTargetFramework>4.0</RequiredTargetFramework>
     </Reference>
     <Reference Include="System.Xml" />
-    <Reference Include="Windows, Version=255.255.255.255, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath Condition="Exists('$(MSBuildProgramFiles32)\Windows Kits\10\UnionMetadata\Windows.winmd')">$(MSBuildProgramFiles32)\Windows Kits\10\UnionMetadata\Windows.winmd</HintPath>
-      <HintPath Condition="Exists('$(MSBuildProgramFiles32)\Windows Kits\10\UnionMetadata\10.0.16299.0\Windows.winmd')">$(MSBuildProgramFiles32)\Windows Kits\10\UnionMetadata\10.0.16299.0\Windows.winmd</HintPath>
-    </Reference>
+    <!-- Windows.winmd is added by ResolveWindowsWinmd so any installed SDK can build the project. -->
     <Reference Include="WindowsBase" />
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
@@ -176,6 +172,7 @@
     <Compile Include="DataModel\Storage\StorageFactory.cs" />
     <Compile Include="DataModel\Storage\Internal\WindowsStorageSettingsBag.cs" />
     <Compile Include="DebugHelpers.cs" />
+    <Compile Include="Diagnosis\CrashLog.cs" />
     <Compile Include="Diagnosis\ErrorReporter.cs" />
     <Compile Include="Diagnosis\SnapshotData.cs" />
     <Compile Include="Extensibility\EarTrumpetAddon.cs" />
@@ -208,6 +205,7 @@
     <Compile Include="UI\Helpers\IShellNotifyIconSource.cs" />
     <Compile Include="UI\Helpers\ShellNotifyIcon.cs" />
     <Compile Include="Interop\Helpers\Kernel32Helper.cs" />
+    <Compile Include="Interop\Helpers\TaskbarWindowMonitor.cs" />
     <Compile Include="Interop\ApplicationResolver.cs" />
     <Compile Include="Interop\Helpers\WindowSizeHelper.cs" />
     <Compile Include="Interop\NotifyIconData.cs" />
@@ -231,6 +229,7 @@
     <Compile Include="UI\Themes\Rule.cs" />
     <Compile Include="UI\Themes\ThemeBindingInfo.cs" />
     <Compile Include="UI\Helpers\TaskbarIconSource.cs" />
+    <Compile Include="UI\Helpers\TaskbarAppVisibility.cs" />
     <Compile Include="UI\ViewModels\BackstackViewModel.cs" />
     <Compile Include="UI\ViewModels\EarTrumpetCommunitySettingsPageViewModel.cs" />
     <Compile Include="UI\ViewModels\EarTrumpetMouseSettingsPageViewModel.cs" />
@@ -303,6 +302,7 @@
     <Compile Include="UI\ViewModels\SettingsPageViewModel.cs" />
     <Compile Include="UI\ViewModels\SettingsSearchItemViewModel.cs" />
     <Compile Include="UI\ViewModels\SettingsViewModel.cs" />
+    <Compile Include="UI\ViewModels\SoundOutputDeviceViewModel.cs" />
     <Compile Include="UI\ViewModels\SettingsCategoryViewModel.cs" />
     <Compile Include="Interop\Helpers\ProcessHelper.cs" />
     <Compile Include="UI\Helpers\SystemSoundsHelper.cs" />
@@ -503,6 +503,30 @@
     <PreBuildEvent>
     </PreBuildEvent>
   </PropertyGroup>
+  <Target Name="ResolveWindowsWinmd" BeforeTargets="ResolveAssemblyReferences">
+    <ItemGroup>
+      <_VersionedWinmd Include="$(MSBuildProgramFiles32)\Windows Kits\10\UnionMetadata\10.*\Windows.winmd" />
+    </ItemGroup>
+    <!-- Batched assignment keeps the last (highest) SDK path. -->
+    <PropertyGroup>
+      <_PickedWinmd>%(_VersionedWinmd.Identity)</_PickedWinmd>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(WindowsWinmdPath)' == '' and '$(_PickedWinmd)' != ''">
+      <WindowsWinmdPath>$(_PickedWinmd)</WindowsWinmdPath>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(WindowsWinmdPath)' == '' and Exists('$(MSBuildProgramFiles32)\Windows Kits\10\UnionMetadata\Windows.winmd')">
+      <WindowsWinmdPath>$(MSBuildProgramFiles32)\Windows Kits\10\UnionMetadata\Windows.winmd</WindowsWinmdPath>
+    </PropertyGroup>
+    <Error Condition="'$(WindowsWinmdPath)' == '' or !Exists('$(WindowsWinmdPath)')" Text="Could not find Windows.winmd. Install a Windows 10 SDK or pass /p:WindowsWinmdPath=..." />
+    <ItemGroup>
+      <Reference Include="Windows">
+        <HintPath>$(WindowsWinmdPath)</HintPath>
+        <SpecificVersion>False</SpecificVersion>
+        <Private>False</Private>
+      </Reference>
+    </ItemGroup>
+    <Message Importance="high" Text="Using Windows metadata: $(WindowsWinmdPath)" />
+  </Target>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>

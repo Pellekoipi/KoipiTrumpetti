@@ -44,6 +44,7 @@ namespace EarTrumpet
 
         private void OnAppStartup(object sender, StartupEventArgs e)
         {
+            CrashLog.Register(this);
             RenderOptions.ProcessRenderMode = RenderMode.SoftwareOnly;
 
             Exit += (_, __) => IsShuttingDown = true;

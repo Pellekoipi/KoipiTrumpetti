@@ -32,6 +32,7 @@ namespace EarTrumpet.DataModel.WindowsAudio.Internal
         private bool _isMuted;
         private bool _isRegistered;
         private uint _speakerConfig;
+        private bool _inEndpointCall;
 
         public AudioDevice(IAudioDeviceManager deviceManager, IMMDevice device, Dispatcher foregroundDispatcher)
         {
@@ -50,7 +51,7 @@ namespace EarTrumpet.DataModel.WindowsAudio.Internal
                 _isMuted = _deviceVolume.GetMute() != 0;
                 _isRegistered = true;
                 _meter = device.Activate<IAudioMeterInformation>();
-                _channels = new AudioDeviceChannelCollection(_deviceVolume, _dispatcher);
+                _channels = new AudioDeviceChannelCollection(_deviceVolume);
                 _sessions = new AudioDeviceSessionCollection(this, _device, _dispatcher);
                 _sessionFilter = new FilteredCollectionChain<IAudioDeviceSession>(_sessions.Sessions, _dispatcher);
                 Groups = _sessionFilter.Items;
@@ -80,17 +81,43 @@ namespace EarTrumpet.DataModel.WindowsAudio.Internal
 
         void IAudioEndpointVolumeCallback.OnNotify(IntPtr pNotify)
         {
-            var data = Marshal.PtrToStructure<AUDIO_VOLUME_NOTIFICATION_DATA>(pNotify);
-            _volume = data.fMasterVolume;
-            _isMuted = data.bMuted != 0;
-
-            _channels.OnNotify(pNotify, data);
-
-            _dispatcher.Invoke((Action)(() =>
+            // SetMasterVolumeLevelScalar invokes this callback before it returns. The endpoint
+            // object is activated on an MTA thread-pool thread and is then called from the UI STA.
+            // mmdevapi objects are in-proc and agile, so the cross-apartment call itself is valid.
+            // Dispatcher.Invoke is not: it pumps the UI thread while the COM call is still on the
+            // stack, the slider binding writes volume again, and the nested call throws
+            // RPC_E_CANTCALLOUT_ININPUTSYNCCALL or overflows. Session callbacks already use
+            // BeginInvoke, which is why only the device slider crashed.
+            try
             {
-                RaisePropertyChanged(nameof(Volume));
-                RaisePropertyChanged(nameof(IsMuted));
-            }));
+                var data = Marshal.PtrToStructure<AUDIO_VOLUME_NOTIFICATION_DATA>(pNotify);
+                _volume = data.fMasterVolume;
+                _isMuted = data.bMuted != 0;
+
+                float[] channelVolumes = null;
+                if (_channels != null)
+                {
+                    channelVolumes = _channels.CopyChannelVolumes(pNotify, data);
+                }
+
+                _dispatcher.BeginInvoke((Action)(() =>
+                {
+                    try
+                    {
+                        _channels?.ApplyChannelVolumes(channelVolumes);
+                        RaisePropertyChanged(nameof(Volume));
+                        RaisePropertyChanged(nameof(IsMuted));
+                    }
+                    catch (Exception ex)
+                    {
+                        Trace.WriteLine($"AudioDevice OnNotify UI {ex}");
+                    }
+                }));
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine($"AudioDevice OnNotify {ex}");
+            }
         }
 
         public float Volume
@@ -101,27 +128,38 @@ namespace EarTrumpet.DataModel.WindowsAudio.Internal
             }
             set
             {
-                value = value.Bound(0, 1f);
-
-                if (App.Settings.UseLogarithmicVolume)
+                try
                 {
-                    value = value.ToLogVolume();
-                }
+                    value = value.Bound(0, 1f);
 
-                if (_volume != value)
-                {
-                    try
+                    if (App.Settings.UseLogarithmicVolume)
+                    {
+                        value = value.ToLogVolume();
+                    }
+
+                    if (_volume != value)
                     {
                         _volume = value;
-                        Guid dummy = Guid.Empty;
-                        _deviceVolume.SetMasterVolumeLevelScalar(value, ref dummy);
-                    }
-                    catch (Exception ex) when (ex.Is(HRESULT.AUDCLNT_E_DEVICE_INVALIDATED))
-                    {
-                        // Expected in some cases.
-                    }
+                        if (_deviceVolume != null && !_inEndpointCall)
+                        {
+                            _inEndpointCall = true;
+                            try
+                            {
+                                Guid dummy = Guid.Empty;
+                                _deviceVolume.SetMasterVolumeLevelScalar(value, ref dummy);
+                            }
+                            finally
+                            {
+                                _inEndpointCall = false;
+                            }
+                        }
 
-                    IsMuted = App.Settings.UseLogarithmicVolume ? _volume <= (1 / 100f).ToLogVolume() : _volume.ToVolumeInt() == 0;
+                        IsMuted = App.Settings.UseLogarithmicVolume ? _volume <= (1 / 100f).ToLogVolume() : _volume.ToVolumeInt() == 0;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Trace.WriteLine($"AudioDevice Volume set {ex}");
                 }
             }
         }
@@ -134,17 +172,25 @@ namespace EarTrumpet.DataModel.WindowsAudio.Internal
             get => _isMuted;
             set
             {
-                if (value != _isMuted)
+                try
                 {
-                    try
+                    if (value != _isMuted && _deviceVolume != null && !_inEndpointCall)
                     {
-                        Guid dummy = Guid.Empty;
-                        _deviceVolume.SetMute(value ? 1 : 0, ref dummy);
+                        _inEndpointCall = true;
+                        try
+                        {
+                            Guid dummy = Guid.Empty;
+                            _deviceVolume.SetMute(value ? 1 : 0, ref dummy);
+                        }
+                        finally
+                        {
+                            _inEndpointCall = false;
+                        }
                     }
-                    catch (Exception ex) when (ex.Is(HRESULT.AUDCLNT_E_DEVICE_INVALIDATED))
-                    {
-                        // Expected in some cases.
-                    }
+                }
+                catch (Exception ex)
+                {
+                    Trace.WriteLine($"AudioDevice IsMuted set {ex}");
                 }
             }
         }

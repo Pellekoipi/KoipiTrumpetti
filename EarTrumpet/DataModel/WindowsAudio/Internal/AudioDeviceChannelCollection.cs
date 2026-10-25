@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Windows.Threading;
 
 namespace EarTrumpet.DataModel.WindowsAudio.Internal
 {
@@ -10,13 +9,10 @@ namespace EarTrumpet.DataModel.WindowsAudio.Internal
     {
         public List<AudioDeviceChannel> Channels { get; }
 
-        private readonly Dispatcher _dispatcher;
         private readonly int _afChannelVolumesOffset;
 
-        public AudioDeviceChannelCollection(IAudioEndpointVolume deviceVolume, Dispatcher dispatcher)
+        public AudioDeviceChannelCollection(IAudioEndpointVolume deviceVolume)
         {
-            _dispatcher = dispatcher;
-
             var ret = new List<AudioDeviceChannel>();
             for (uint i = 0; i < deviceVolume.GetChannelCount(); i++)
             {
@@ -28,12 +24,35 @@ namespace EarTrumpet.DataModel.WindowsAudio.Internal
             _afChannelVolumesOffset = Marshal.OffsetOf<AUDIO_VOLUME_NOTIFICATION_DATA>(nameof(dummy.afChannelVolumes)).ToInt32();
         }
 
-        public void OnNotify(IntPtr pNotify, AUDIO_VOLUME_NOTIFICATION_DATA data)
+        public float[] CopyChannelVolumes(IntPtr pNotify, AUDIO_VOLUME_NOTIFICATION_DATA data)
         {
-            var channelVolumesValues = new float[data.nChannels];
-            Marshal.Copy(IntPtr.Add(pNotify, _afChannelVolumesOffset), channelVolumesValues, 0, (int)data.nChannels);
+            // afChannelVolumes is a flexible inline array, not a pointer. The notification
+            // buffer is only valid for the duration of IAudioEndpointVolumeCallback.OnNotify.
+            var count = (int)data.nChannels;
+            if (count <= 0 || Channels == null || Channels.Count == 0)
+            {
+                return null;
+            }
 
-            for (var i = 0; i < data.nChannels; i++)
+            if (count > Channels.Count)
+            {
+                count = Channels.Count;
+            }
+
+            var channelVolumesValues = new float[count];
+            Marshal.Copy(IntPtr.Add(pNotify, _afChannelVolumesOffset), channelVolumesValues, 0, count);
+            return channelVolumesValues;
+        }
+
+        public void ApplyChannelVolumes(float[] channelVolumesValues)
+        {
+            if (channelVolumesValues == null || Channels == null)
+            {
+                return;
+            }
+
+            var count = Math.Min(channelVolumesValues.Length, Channels.Count);
+            for (var i = 0; i < count; i++)
             {
                 Channels[i].OnNotify(channelVolumesValues[i]);
             }

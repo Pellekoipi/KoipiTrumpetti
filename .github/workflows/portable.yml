@@ -1,0 +1,103 @@
+name: Portable Release
+
+on:
+  push:
+    branches:
+      - master
+      - "cursor/**"
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  BUILD_CONFIGURATION: Release
+  BUILD_PLATFORM: x86
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.head_ref || github.ref_name }}
+
+      - name: Trust repository for GitVersion
+        shell: pwsh
+        run: git config --global --add safe.directory "$env:GITHUB_WORKSPACE"
+
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v2
+
+      - name: Restore packages
+        shell: pwsh
+        run: nuget restore .\EarTrumpet\packages.config -PackagesDirectory .\packages -NonInteractive
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Locate Windows.winmd
+        shell: pwsh
+        run: |
+          $root = "${env:ProgramFiles(x86)}\Windows Kits\10\UnionMetadata"
+          $winmd = Get-ChildItem $root -Directory |
+            Where-Object { $_.Name -like "10.*" } |
+            Sort-Object Name |
+            Select-Object -Last 1 |
+            ForEach-Object { Join-Path $_.FullName "Windows.winmd" } |
+            Where-Object { Test-Path $_ } |
+            Select-Object -First 1
+          if (-not $winmd) { throw "A versioned Windows.winmd was not found under $root. The Facade winmd cannot compile this project." }
+          "WINMD_PATH=$winmd" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          Write-Host "Using $winmd"
+
+      - name: Build unpackaged Release
+        shell: pwsh
+        run: |
+          msbuild .\EarTrumpet\EarTrumpet.csproj `
+            /p:Configuration=$env:BUILD_CONFIGURATION `
+            /p:Platform=$env:BUILD_PLATFORM `
+            /p:WindowsWinmdPath="$env:WINMD_PATH" `
+            /p:AppxPackageSigningEnabled=false `
+            /m `
+            /v:m
+
+      - name: Stage portable layout
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $source = Join-Path $env:GITHUB_WORKSPACE "Build\Release"
+          if (-not (Test-Path (Join-Path $source "EarTrumpet.exe"))) {
+            throw "EarTrumpet.exe was not produced at $source"
+          }
+
+          $stage = Join-Path $env:GITHUB_WORKSPACE "artifacts\portable"
+          New-Item -ItemType Directory -Path $stage -Force | Out-Null
+          Copy-Item (Join-Path $source "EarTrumpet.exe") $stage
+          Copy-Item (Join-Path $source "*.dll") $stage -ErrorAction SilentlyContinue
+          Copy-Item (Join-Path $source "*.exe.config") $stage -ErrorAction SilentlyContinue
+          Copy-Item (Join-Path $source "EarTrumpet.exe.config") $stage -ErrorAction SilentlyContinue
+
+          Get-ChildItem $source -Directory | ForEach-Object {
+            $satellites = Get-ChildItem $_.FullName -Filter *.resources.dll -ErrorAction SilentlyContinue
+            if ($satellites) {
+              $dest = Join-Path $stage $_.Name
+              New-Item -ItemType Directory -Path $dest -Force | Out-Null
+              Copy-Item $satellites.FullName $dest
+            }
+          }
+
+          $zip = Join-Path $env:GITHUB_WORKSPACE "artifacts\KoipiTrumpetti-portable-x86.zip"
+          if (Test-Path $zip) { Remove-Item $zip -Force }
+          Compress-Archive -Path (Join-Path $stage "*") -DestinationPath $zip -CompressionLevel Optimal
+          Get-ChildItem $stage -Recurse | Select-Object -ExpandProperty FullName
+
+      - name: Upload portable artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: KoipiTrumpetti-portable-x86
+          path: artifacts/KoipiTrumpetti-portable-x86.zip
+          if-no-files-found: error

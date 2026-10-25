@@ -14,11 +14,18 @@ namespace EarTrumpet.DataModel.WindowsAudio.Internal
             {
                 if (_level != value)
                 {
-                    _level = value;
-                    Guid dummy = Guid.Empty;
-                    _session.SetChannelVolume(_index, value, ref dummy);
+                    try
+                    {
+                        _level = value;
+                        Guid dummy = Guid.Empty;
+                        _session.SetChannelVolume(_index, value, ref dummy);
 
-                    RaisePropertyChanged(nameof(Level));
+                        RaisePropertyChanged(nameof(Level));
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Trace.WriteLine($"AudioDeviceSessionChannel Level set {ex}");
+                    }
                 }
             }
         }

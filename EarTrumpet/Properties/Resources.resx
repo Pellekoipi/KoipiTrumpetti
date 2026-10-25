@@ -665,4 +665,13 @@ Open [https://eartrumpet.app/jmp/fixfonts] now?</value>
   <data name="SettingsUseLogarithmicVolume" xml:space="preserve">
     <value>Use logarithmic volume scale</value>
   </data>
+  <data name="SoundOutputTitle" xml:space="preserve">
+    <value>Sound output</value>
+  </data>
+  <data name="PlaybackDeviceHeader" xml:space="preserve">
+    <value>Playback device</value>
+  </data>
+  <data name="MoreVolumeSettingsText" xml:space="preserve">
+    <value>More volume settings</value>
+  </data>
 </root>
