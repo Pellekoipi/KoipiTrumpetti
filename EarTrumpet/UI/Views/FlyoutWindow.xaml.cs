@@ -50,8 +50,7 @@ namespace EarTrumpet.UI.Views
                     EnableAcrylicIfApplicable(taskbar);
                     PositionWindowRelativeToTaskbar(taskbar);
 
-                    // Focus the first device if available.
-                    DevicesList.FindVisualChild<DeviceView>()?.FocusAndRemoveFocusVisual();
+                    BackButton?.Focus();
 
                     // Prevent showing stale adnorners.
                     this.WaitForKeyboardVisuals(() =>
@@ -64,8 +63,6 @@ namespace EarTrumpet.UI.Views
                     break;
 
                 case FlyoutViewState.Closing_Stage1:
-                    DevicesList.FindVisualChild<DeviceView>()?.FocusAndRemoveFocusVisual();
-                
                     if (_viewModel.IsExpandingOrCollapsing)
                     {
                         WindowAnimationLibrary.BeginFlyoutExitanimation(this, () =>
@@ -208,7 +205,7 @@ namespace EarTrumpet.UI.Views
             // Note: Enable when in Opening as well as Open in case we get a theme change during a show cycle.
             if (_viewModel.State == FlyoutViewState.Opening || _viewModel.State == FlyoutViewState.Open)
             {
-                AccentPolicyLibrary.EnableAcrylic(this, Themes.Manager.Current.ResolveRef(this, "AcrylicColor_Flyout"), GetAccentFlags(taskbar));
+                AccentPolicyLibrary.EnableAcrylic(this, Themes.Manager.Current.ResolveRef(this, "AcrylicColor_SoundOutput"), GetAccentFlags(taskbar));
             }
             else
             {

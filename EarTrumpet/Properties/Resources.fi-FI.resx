@@ -640,4 +640,13 @@ Avaa [https://eartrumpet.app/jmp/fixfonts] nyt?</value>
   <data name="ChooseAnAppHelpText" xml:space="preserve">
     <value>Edellä esitetyt sovellukset ovat soittaneet ääntä äskettäin.</value>
   </data>
+  <data name="SoundOutputTitle" xml:space="preserve">
+    <value>Äänilähtö</value>
+  </data>
+  <data name="PlaybackDeviceHeader" xml:space="preserve">
+    <value>Toistolaite</value>
+  </data>
+  <data name="MoreVolumeSettingsText" xml:space="preserve">
+    <value>Lisää äänenvoimakkuusasetuksia</value>
+  </data>
 </root>

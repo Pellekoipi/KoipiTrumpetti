@@ -1699,5 +1699,32 @@ namespace EarTrumpet.Properties {
                 return ResourceManager.GetString("WindowsLegacyMenuText", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Sound output.
+        /// </summary>
+        public static string SoundOutputTitle {
+            get {
+                return ResourceManager.GetString("SoundOutputTitle", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Playback device.
+        /// </summary>
+        public static string PlaybackDeviceHeader {
+            get {
+                return ResourceManager.GetString("PlaybackDeviceHeader", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to More volume settings.
+        /// </summary>
+        public static string MoreVolumeSettingsText {
+            get {
+                return ResourceManager.GetString("MoreVolumeSettingsText", resourceCulture);
+            }
+        }
     }
 }
