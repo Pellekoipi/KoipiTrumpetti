@@ -152,11 +152,10 @@
     <Grid x:Name="LayoutRoot" Theme:Brush.Background="FlyoutBackground">
         <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
             <StackPanel>
-                <Grid Margin="8,8,12,2" Height="40">
+                <Grid Margin="8,8,8,2" Height="40">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <Button x:Name="BackButton"
                             AutomationProperties.Name="{x:Static resx:Resources.CloseButtonAccessibleText}"
@@ -175,48 +174,6 @@
                                FontWeight="SemiBold"
                                Text="{x:Static resx:Resources.SoundOutputTitle}"
                                Theme:Brush.Foreground="Text" />
-                    <StackPanel Grid.Column="2"
-                                VerticalAlignment="Center"
-                                Orientation="Horizontal"
-                                IsHitTestVisible="False">
-                        <Border MinWidth="22"
-                                Height="22"
-                                Margin="2,0"
-                                Padding="5,0"
-                                Background="#22FFFFFF"
-                                CornerRadius="4">
-                            <TextBlock HorizontalAlignment="Center"
-                                       VerticalAlignment="Center"
-                                       FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
-                                       FontSize="11"
-                                       Text="&#xE782;"
-                                       Theme:Brush.Foreground="Text" />
-                        </Border>
-                        <Border MinWidth="22"
-                                Height="22"
-                                Margin="2,0"
-                                Padding="6,0"
-                                Background="#22FFFFFF"
-                                CornerRadius="4">
-                            <TextBlock HorizontalAlignment="Center"
-                                       VerticalAlignment="Center"
-                                       FontSize="11"
-                                       Text="Ctrl"
-                                       Theme:Brush.Foreground="Text" />
-                        </Border>
-                        <Border MinWidth="22"
-                                Height="22"
-                                Margin="2,0,0,0"
-                                Padding="6,0"
-                                Background="#22FFFFFF"
-                                CornerRadius="4">
-                            <TextBlock HorizontalAlignment="Center"
-                                       VerticalAlignment="Center"
-                                       FontSize="11"
-                                       Text="V"
-                                       Theme:Brush.Foreground="Text" />
-                        </Border>
-                    </StackPanel>
                 </Grid>
 
                 <TextBlock Margin="16,8,16,6"
