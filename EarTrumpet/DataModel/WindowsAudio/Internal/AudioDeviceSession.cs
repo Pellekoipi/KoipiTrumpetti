@@ -48,15 +48,18 @@ namespace EarTrumpet.DataModel.WindowsAudio.Internal
                     try
                     {
                         _volume = value;
-                        Guid dummy = Guid.Empty;
-                        _simpleVolume.SetMasterVolume(value, ref dummy);
-                    }
-                    catch (Exception ex) when (ex.Is(HRESULT.AUDCLNT_E_DEVICE_INVALIDATED))
-                    {
-                        // Expected in some cases.
-                    }
+                        if (_simpleVolume != null)
+                        {
+                            Guid dummy = Guid.Empty;
+                            _simpleVolume.SetMasterVolume(value, ref dummy);
+                        }
 
-                    IsMuted = App.Settings.UseLogarithmicVolume ? _volume <= (1 / 100f).ToLogVolume() : _volume.ToVolumeInt() == 0;
+                        IsMuted = App.Settings.UseLogarithmicVolume ? _volume <= (1 / 100f).ToLogVolume() : _volume.ToVolumeInt() == 0;
+                    }
+                    catch (Exception ex)
+                    {
+                        Trace.WriteLine($"AudioDeviceSession Volume set {ex}");
+                    }
                 }
             }
         }
@@ -70,12 +73,15 @@ namespace EarTrumpet.DataModel.WindowsAudio.Internal
                 {
                     try
                     {
-                        Guid dummy = Guid.Empty;
-                        _simpleVolume.SetMute(value ? 1 : 0, ref dummy);
+                        if (_simpleVolume != null)
+                        {
+                            Guid dummy = Guid.Empty;
+                            _simpleVolume.SetMute(value ? 1 : 0, ref dummy);
+                        }
                     }
-                    catch (Exception ex) when (ex.Is(HRESULT.AUDCLNT_E_DEVICE_INVALIDATED))
+                    catch (Exception ex)
                     {
-                        // Expected in some cases.
+                        Trace.WriteLine($"AudioDeviceSession IsMuted set {ex}");
                     }
                 }
             }
