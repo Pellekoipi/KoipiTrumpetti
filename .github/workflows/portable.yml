@@ -42,12 +42,17 @@ jobs:
       - name: Locate Windows.winmd
         shell: pwsh
         run: |
-          $winmd = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\UnionMetadata" -Recurse -Filter Windows.winmd |
-            Sort-Object FullName |
-            Select-Object -Last 1
-          if (-not $winmd) { throw "Windows.winmd was not found in the Windows SDK." }
-          "WINMD_PATH=$($winmd.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          Write-Host "Using $($winmd.FullName)"
+          $root = "${env:ProgramFiles(x86)}\Windows Kits\10\UnionMetadata"
+          $winmd = Get-ChildItem $root -Directory |
+            Where-Object { $_.Name -like "10.*" } |
+            Sort-Object Name |
+            Select-Object -Last 1 |
+            ForEach-Object { Join-Path $_.FullName "Windows.winmd" } |
+            Where-Object { Test-Path $_ } |
+            Select-Object -First 1
+          if (-not $winmd) { throw "A versioned Windows.winmd was not found under $root. The Facade winmd cannot compile this project." }
+          "WINMD_PATH=$winmd" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          Write-Host "Using $winmd"
 
       - name: Build unpackaged Release
         shell: pwsh
